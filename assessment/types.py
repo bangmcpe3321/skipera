@@ -2,7 +2,15 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any, Literal
 
-WHITELISTED_QUESTION_TYPES = ["Submission_CheckboxQuestion", "Submission_MultipleChoiceQuestion"]
+WHITELISTED_QUESTION_TYPES = [
+    "Submission_CheckboxQuestion",
+    "Submission_MultipleChoiceQuestion",
+    "Submission_NumericQuestion",
+    "Submission_RegexQuestion",
+    "Submission_PlainTextQuestion",
+    "Submission_TextExactMatchQuestion",
+    "Submission_MathQuestion",
+]
 
 
 QUESTION_TYPE_MAP = {
@@ -31,7 +39,7 @@ class Submission_CodeInput(BaseModel):
 
 
 class Submission_CheckboxQuestion(BaseModel):
-    chosen: Optional[List[str]] = None
+    chosen: List[str] = []
 
 
 class Submission_CodeExpressionQuestion(BaseModel):
@@ -45,7 +53,7 @@ class Submission_FileUploadQuestion(BaseModel):
 
 
 class Submission_MathQuestion(BaseModel):
-    answer: Optional[str] = None
+    answer: str = ""
 
 
 class Submission_MultipleChoiceQuestion(BaseModel):
@@ -66,15 +74,15 @@ class Submission_MultipleFillableBlanksQuestion(BaseModel):
 
 
 class Submission_NumericQuestion(BaseModel):
-    answer: Literal[""]  # :(
+    answer: str = ""
 
 
 class Submission_PlainTextQuestion(BaseModel):
-    plainText: Optional[str] = None
+    plainText: str = ""
 
 
 class Submission_RegexQuestion(BaseModel):
-    answer: Optional[str] = None
+    answer: str = ""
 
 
 class Submission_RichTextInput(BaseModel):
@@ -86,11 +94,11 @@ class Submission_RichTextQuestion(BaseModel):
 
 
 class Submission_TextExactMatchQuestion(BaseModel):
-    answer: Optional[str] = None
+    answer: str = ""
 
 
 class Submission_TextReflectQuestion(BaseModel):
-    answer: Optional[str] = None
+    answer: str = ""
 
 
 class Submission_UrlQuestion(BaseModel):
@@ -121,12 +129,14 @@ MODEL_MAP = {
 }
 
 
-# Bad recursive function
 def deep_blank_model(model_cls):
     data = {}
     for name, field in model_cls.model_fields.items():
-        if hasattr(field.annotation, '__fields__'):
+        if hasattr(field.annotation, 'model_fields'):
             data[name] = deep_blank_model(field.annotation)
         else:
-            data[name] = None
+            if not field.is_required():
+                data[name] = field.default
+            else:
+                data[name] = None
     return data
